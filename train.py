@@ -16,7 +16,7 @@ import logging
 
 def calc_normalization(train_dl: torch.utils.data.DataLoader):
     "Calculate the mean and std of each channel on images from `train_dl`"
-    
+
     mean = torch.zeros(3)
     m2 = torch.zeros(3)
     n = len(train_dl)
@@ -28,13 +28,14 @@ def calc_normalization(train_dl: torch.utils.data.DataLoader):
 
 
 
-def load_data(root="/home/ali/spacesense/EuroSAT/2750/", batch_size=16):
+def load_data(root="/home/ali/spacesense/EuroSAT/2750/", batch_size=32):
     transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.3443, 0.3817, 0.4084), (0.2018, 0.1352, 0.1147))])
 
     dataset = torchvision.datasets.ImageFolder(root=root, transform=transform)
-    train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size=0.2, stratify=dataset.targets)
+    train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size=0.2, stratify=dataset.targets, random_state=11)
+    embed()
     train_dataset = Subset(dataset, train_idx)
     val_dataset = Subset(dataset, val_idx)
     # embed()
@@ -51,12 +52,21 @@ def load_data(root="/home/ali/spacesense/EuroSAT/2750/", batch_size=16):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='cifar10 classification models.')
+    parser.add_argument('--lr', default=0.1, help='Learning rate for trainig.')
+    parser.add_argument('--batch_size', default=32, help='The batch size for training.')
+    parser.add_argument('--log_file', type=str, default='training.log', help='A file to log the training and val losses and accuracies.')
+    parser.add_argument('--data_dir', type=str, default="/home/ali/spacesense/EuroSAT/2750/", help='The directory where the dataset is stored.')
+    parser.add_argument('--num_epochs', default=75, help='Number of total epochs.')
+    args = parser.parse_args()
+
+
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger()
-    logger.addHandler(logging.FileHandler('training.log', 'a'))
+    logger.addHandler(logging.FileHandler(args.log_file, 'a'))
     print = logger.info
 
-    train_loader, val_loader = load_data()
+    train_loader, val_loader = load_data(args.data_dir, args.batch_size)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -67,11 +77,11 @@ if __name__ == "__main__":
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.1,
+    optimizer = optim.SGD(model.parameters(), lr=args.lr,
                       momentum=0.9, weight_decay=5e-4)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
 
-    epochs = 75
+    epochs = args.num_epochs
     best_acc = 0
 
     # Training
