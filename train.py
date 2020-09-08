@@ -40,6 +40,12 @@ scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
 train_loader, val_loader = load_data(args.data_dir, args.batch_size)
 
 def train(epoch):
+    """Main training loop.
+
+    Args:
+        epoch (int): Current epoch.
+    """    
+    
     model.train()
     train_loss = 0
     correct = 0
@@ -68,6 +74,16 @@ def train(epoch):
     scheduler.step()
 
 def test(epoch, best_acc):
+    """Main testing loop.
+
+    Args:
+        epoch (int): Current epoch.
+        best_acc (float): Current best accuracy.
+
+    Returns:
+        float: new best accuracy (could be not changed).
+    """    
+
     model.eval()
     test_loss = 0
     test_correct = 0

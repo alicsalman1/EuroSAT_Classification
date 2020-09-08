@@ -11,6 +11,15 @@ from utils import idx_to_class
 
 
 def image_loader(image_name):
+    """Load image into a tensor.
+
+    Args:
+        image_name (str):The path to the image.
+
+    Returns:
+        tensor: Image after being proccessed.
+    """    
+    
     transform = transforms.Compose([transforms.ToTensor(), 
                             transforms.Normalize((0.3443, 0.3817, 0.4084), (0.2018, 0.1352, 0.1147))])
     image = Image.open(image_name)
@@ -32,7 +41,7 @@ if __name__ == "__main__":
 
     model_dict = torch.load(args.model)
     print("model's accuracy is: {}".format(model_dict['acc']))
-    
+
     model.load_state_dict(model_dict['net'])
     model.cuda().eval()
 

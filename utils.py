@@ -22,7 +22,15 @@ idx_to_class = {0 : 'AnnualCrop',
 
 
 def calc_normalization(train_dl: torch.utils.data.DataLoader):
-    "Calculate the mean and std of each channel on images from `train_dl`"
+    """Function to calculate the mean and srtandard deviation of the dataset.
+
+    Args:
+        train_dl (torch.utils.data.DataLoader): DataLoader of the dataset.
+
+    Returns:
+        mean (array): The mean of each of the RGB channels.
+        
+    """    
 
     mean = torch.zeros(3)
     m2 = torch.zeros(3)
@@ -34,7 +42,17 @@ def calc_normalization(train_dl: torch.utils.data.DataLoader):
     return mean, var.sqrt()
 
 
-def load_data(root="/home/ali/spacesense/EuroSAT/2750/", batch_size=32):
+def load_data(root, batch_size=32):
+    """Load and split the dataset.
+
+    Args:
+        root (str): Path to the dataset folder.
+        batch_size (int, optional): The batch size. Defaults to 32.
+
+    Returns:
+        DataLoader: Train and test data loaders.
+    """    
+
     transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.3443, 0.3817, 0.4084), (0.2018, 0.1352, 0.1147))])
@@ -52,6 +70,13 @@ def load_data(root="/home/ali/spacesense/EuroSAT/2750/", batch_size=32):
 
 
 def performance_report(model, val_loader):
+    """Generates classification report and plots confusion matrix.
+
+    Args:
+        model (torch model): The trained model.
+        val_loader (DataLoader): Test set data loader.
+    """    
+
     model_dict = torch.load("./checkpoints/best_model.pth")
     model.load_state_dict(model_dict['net'])
     model.cuda().eval()
@@ -72,7 +97,7 @@ def performance_report(model, val_loader):
 
     confusion = confusion_matrix(gt, preds)
     confusion = pd.DataFrame(confusion, index=idx_to_class.values(), columns=idx_to_class.values())
-    
+
     sns.heatmap(confusion, annot=True, cmap='Blues', fmt='g')
     plt.xticks(rotation=0) 
     plt.savefig("confusion_matrix.png")
