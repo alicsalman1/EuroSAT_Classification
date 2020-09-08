@@ -12,6 +12,22 @@ from IPython import embed
 import os
 import argparse
 import logging
+from sklearn.metrics import classification_report, confusion_matrix
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+idx_to_class = {0 : 'AnnualCrop',
+                1 : 'Forest',
+                2 : 'HerbaVeg',
+                3 : 'Highway',
+                4 : 'Industrial',
+                5 : 'Pasture',
+                6 : 'PermanentCrop',
+                7 : 'Residential',
+                8 : 'River',
+                9 : 'SeaLake'}
 
 
 def calc_normalization(train_dl: torch.utils.data.DataLoader):
@@ -35,7 +51,7 @@ def load_data(root="/home/ali/spacesense/EuroSAT/2750/", batch_size=32):
 
     dataset = torchvision.datasets.ImageFolder(root=root, transform=transform)
     train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size=0.2, stratify=dataset.targets, random_state=11)
-    embed()
+    # embed()
     train_dataset = Subset(dataset, train_idx)
     val_dataset = Subset(dataset, val_idx)
     # embed()
@@ -49,6 +65,32 @@ def load_data(root="/home/ali/spacesense/EuroSAT/2750/", batch_size=32):
     # mean, std = calc_normalization(val_data_loader)
     # embed()
     return train_data_loader, val_data_loader
+
+
+def performance_report(model, val_loader):
+    model_dict = torch.load("./checkpoints/best_model.pth")
+    model.load_state_dict(model_dict['net'])
+    model.cuda().eval()
+    preds = []
+    gt = []
+    with torch.no_grad():
+                for batch_idx, (inputs, targets) in enumerate(val_loader):
+                    inputs, targets = inputs.cuda(), targets.cuda()
+                    outputs = model(inputs)
+
+                    predicted = outputs.argmax(1).tolist()
+                    gt += targets.tolist()
+                    preds += predicted
+
+    cl_report = classification_report(gt, preds, target_names=idx_to_class.values(), digits=3, output_dict=True)
+    cl_report = pd.DataFrame(cl_report).transpose()
+    print(cl_report)
+    confusion = confusion_matrix(gt, preds)
+    confusion = pd.DataFrame(confusion, index=idx_to_class.values(), columns=idx_to_class.values())
+    sns.heatmap(confusion, annot=True, cmap='Blues', fmt='g')
+    plt.xticks(rotation=0) 
+    plt.savefig("confusion_matrix.png")
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -146,11 +188,5 @@ if __name__ == "__main__":
                 torch.save(state, './checkpoints/best_model.pth')
                 best_acc = acc
 
-        # if epoch % 10 == 0:
-        #     print('==> Saving a checkpoint...')  
-        #     state = {
-        #     'net': model.state_dict(),
-        #     'acc': acc,
-        #     'epoch': epoch,
-        #     }
-        #     torch.save(state, './checkpoints/epoch_{}.pth'.format(epoch)) 
+    # Create performance report using the best model parameters.
+    performance_report(model, val_loader)

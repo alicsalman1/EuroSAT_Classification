@@ -7,10 +7,9 @@ import torch.nn as nn
 from IPython import embed
 import argparse
 
-
 idx_to_class = {0 : 'AnnualCrop',
                 1 : 'Forest',
-                2 : 'HerbaceousVegetation',
+                2 : 'HerbaVeg',
                 3 : 'Highway',
                 4 : 'Industrial',
                 5 : 'Pasture',
@@ -18,6 +17,7 @@ idx_to_class = {0 : 'AnnualCrop',
                 7 : 'Residential',
                 8 : 'River',
                 9 : 'SeaLake'}
+
 
 def image_loader(image_name):
     """load image, returns cuda tensor"""
@@ -50,3 +50,4 @@ if __name__ == "__main__":
 
     print("The class is: {}".format(idx_to_class[int(pred)]))
     print("Done!")
+
