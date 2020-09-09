@@ -19,14 +19,14 @@ Run the following script:
 python train.py --data_dir <path_to_dataset_folder> \
     --epochs 75 \
     --lr 0.1 \
-    --step_lr 30 \
-    --batch_size 64 \
+    --step_lr 25 \
+    --batch_size 128 \
     --weight_decay 5e-4 \
     --log_file training.log
 ```
 
 ## Evaluation
-If you only want to evaluate a model, run:
+If you only want to evaluate the model, run:
 ```
 python train.py --eval_only \
     --model checkpoints/best_model.pth 
@@ -43,6 +43,8 @@ python inference.py images/Forest.jpg --model checkpoints/best_model.pth
 ```
 
 ## Results
+The pretrained model can be found [here](checkpoints/best_model.pth).
+
 ### Accuracy
 |Model|Accuracy|
 |:----:|:----:|
@@ -68,3 +70,24 @@ SeaLake         |0.9924  |0.9750  |0.9836
 
 
 ## Discussions
+
+#### Dataset
+1. The dataset was not balanced, so I only used 2000 images from each class (which was the minimum class size between the 10 classes).
+
+2. I used a 80/20 train/test split. Also, I used stratify option while doining the split to make sure the classes in both train and test sets are balanced.
+
+3. It is always good to normalize data for training, so I first computed the mean and standard deviation of each of the RDB channels of the images, which I then used to notrmalize the values to [0, 1].
+
+
+#### Architecture 
+1. I used a ResNet-18 architecture which has been used alot for classification tasks and shown good results. ResNet-50 is also a good choice and may boost the performence, however I was working with a bad gpu (< 2gb) which was not enough to fit and train this model.
+2. I added a classification head inorder to output only 10 values (one for each class).
+3. The network was pretrained on ImageNet.
+
+
+#### Training
+1. SGD optimizer with Cross Entropy.
+2. Initial learning rate of value 0.1, with a scheduler the decays the value by a factor of 10 after each 25 epochs.
+3. A weight decay of 5e-4.
+4. Batches of size 128.
+4. 75 epochs. This was actually too much for fine tunning, so one can train for fewer epochs.
