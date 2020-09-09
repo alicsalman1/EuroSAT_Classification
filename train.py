@@ -12,16 +12,16 @@ from utils import load_data, performance_report
 
 
 parser = argparse.ArgumentParser(description='Parse Training parameters.')
-parser.add_argument('--lr', default=0.1, help='The learning rate for trainig.')
-parser.add_argument('--weight_decay', default=5e-4, help='The weight decay for trainig.')
-parser.add_argument('--step_lr', default=25, help='The step size for learning rate scheduler.')
-parser.add_argument('--batch_size', default=64,
+parser.add_argument('--lr', type=float, default=0.1, help='The learning rate for trainig.')
+parser.add_argument('--weight_decay', type=float, default=5e-4, help='The weight decay for trainig.')
+parser.add_argument('--step_lr', type=float, default=25, help='The step size for learning rate scheduler.')
+parser.add_argument('--batch_size', type=int, default=64,
                     help='The batch size for training.')
 parser.add_argument('--log_file', type=str, default='training.log',
                     help='A file to log the training and val losses and accuracies.')
 parser.add_argument('--data_dir', type=str, default="/home/ali/spacesense/EuroSAT/2750/",
                     help='The directory where the dataset is stored.')
-parser.add_argument('--epochs', default=75, help='Number of total epochs.')
+parser.add_argument('--epochs', type=int, default=75, help='Number of total epochs.')
 parser.add_argument('--eval_only', action='store_true',
                     help='To evaluate the model only')
 parser.add_argument('--model', type=str, default="./checkpoints/best_model.pth",
@@ -130,7 +130,7 @@ def test(epoch, best_acc):
 
 
 if __name__ == "__main__":
-    epochs = args.num_epochs
+    epochs = args.epochs
     best_acc = 0
     test_every = 2
 
