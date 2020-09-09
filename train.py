@@ -21,7 +21,7 @@ parser.add_argument('--log_file', type=str, default='training.log',
                     help='A file to log the training and val losses and accuracies.')
 parser.add_argument('--data_dir', type=str, default="/home/ali/spacesense/EuroSAT/2750/",
                     help='The directory where the dataset is stored.')
-parser.add_argument('--num_epochs', default=75, help='Number of total epochs.')
+parser.add_argument('--epochs', default=75, help='Number of total epochs.')
 parser.add_argument('--eval_only', action='store_true',
                     help='To evaluate the model only')
 parser.add_argument('--model', type=str, default="./checkpoints/best_model.pth",
