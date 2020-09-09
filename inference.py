@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 from torch.autograd import Variable
 
-from utils import idx_to_class
+from utils import idx_to_class, TRANSFORM
 
 
 def image_loader(image_name):
@@ -18,12 +18,10 @@ def image_loader(image_name):
 
     Returns:
         tensor: Image after being proccessed.
-    """    
-    
-    transform = transforms.Compose([transforms.ToTensor(), 
-                            transforms.Normalize((0.3443, 0.3817, 0.4084), (0.2018, 0.1352, 0.1147))])
+    """
+
     image = Image.open(image_name)
-    image = transform(image).float()
+    image = TRANSFORM(image).float()
     image = Variable(image, requires_grad=True)
     image = image.unsqueeze(0)
     return image
@@ -31,11 +29,12 @@ def image_loader(image_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parse inference parameters')
-    parser.add_argument('--model', type=str, default='checkpoints/best_model.pth', help='The path for the trained model.')
-    parser.add_argument('img_dir', type=str, help='The input image.')
+    parser.add_argument('--model', type=str, default='checkpoints/best_model.pth',
+                        help='The path for the trained model.')
+    parser.add_argument('img_path', type=str, help='The input image.')
     args = parser.parse_args()
 
-    img = image_loader(args.img_dir)    
+    img = image_loader(args.img_path)
     model = models.resnet18()
     model.fc = nn.Linear(model.fc.in_features, 10)
 

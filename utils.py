@@ -9,16 +9,20 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
 
 
-idx_to_class = {0 : 'AnnualCrop',
-                1 : 'Forest',
-                2 : 'HerbaVeg',
-                3 : 'Highway',
-                4 : 'Industrial',
-                5 : 'Pasture',
-                6 : 'PermanentCrop',
-                7 : 'Residential',
-                8 : 'River',
-                9 : 'SeaLake'}
+idx_to_class = {0: 'AnnualCrop',
+                1: 'Forest',
+                2: 'HerbaVeg',
+                3: 'Highway',
+                4: 'Industrial',
+                5: 'Pasture',
+                6: 'PermanentCrop',
+                7: 'Residential',
+                8: 'River',
+                9: 'SeaLake'}
+
+
+TRANSFORM = transforms.Compose([transforms.ToTensor(),
+                                transforms.Normalize((0.3443, 0.3817, 0.4084), (0.2018, 0.1352, 0.1147))])
 
 
 def calc_normalization(train_dl: torch.utils.data.DataLoader):
@@ -29,8 +33,8 @@ def calc_normalization(train_dl: torch.utils.data.DataLoader):
 
     Returns:
         mean (array): The mean of each of the RGB channels.
-        
-    """    
+
+    """
 
     mean = torch.zeros(3)
     m2 = torch.zeros(3)
@@ -51,20 +55,19 @@ def load_data(root, batch_size=32):
 
     Returns:
         DataLoader: Train and test data loaders.
-    """    
+    """
 
-    transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.3443, 0.3817, 0.4084), (0.2018, 0.1352, 0.1147))])
-
-    dataset = torchvision.datasets.ImageFolder(root=root, transform=transform)
-    train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size=0.2, stratify=dataset.targets, random_state=11)
+    dataset = torchvision.datasets.ImageFolder(root=root, transform=TRANSFORM)
+    train_idx, val_idx = train_test_split(list(
+        range(len(dataset))), test_size=0.2, stratify=dataset.targets, random_state=11)
 
     train_dataset = Subset(dataset, train_idx)
     val_dataset = Subset(dataset, val_idx)
 
-    train_data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_data_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
+    train_data_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=128, shuffle=True)
+    val_data_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=64, shuffle=False)
     # mean, std = calc_normalization(val_data_loader)
     return train_data_loader, val_data_loader
 
@@ -75,7 +78,7 @@ def performance_report(model, val_loader):
     Args:
         model (torch model): The trained model.
         val_loader (DataLoader): Test set data loader.
-    """    
+    """
 
     model_dict = torch.load("./checkpoints/best_model.pth")
     model.load_state_dict(model_dict['net'])
@@ -83,22 +86,24 @@ def performance_report(model, val_loader):
     preds = []
     gt = []
     with torch.no_grad():
-                for batch_idx, (inputs, targets) in enumerate(val_loader):
-                    inputs, targets = inputs.cuda(), targets.cuda()
-                    outputs = model(inputs)
+        for batch_idx, (inputs, targets) in enumerate(val_loader):
+            inputs, targets = inputs.cuda(), targets.cuda()
+            outputs = model(inputs)
 
-                    predicted = outputs.argmax(1).tolist()
-                    gt += targets.tolist()
-                    preds += predicted
+            predicted = outputs.argmax(1).tolist()
+            gt += targets.tolist()
+            preds += predicted
 
-    cl_report = classification_report(gt, preds, target_names=idx_to_class.values(), digits=3, output_dict=True)
+    cl_report = classification_report(
+        gt, preds, target_names=idx_to_class.values(), digits=3, output_dict=True)
     cl_report = pd.DataFrame(cl_report).transpose()
     print(cl_report)
 
     confusion = confusion_matrix(gt, preds)
-    confusion = pd.DataFrame(confusion, index=idx_to_class.values(), columns=idx_to_class.values())
+    confusion = pd.DataFrame(
+        confusion, index=idx_to_class.values(), columns=idx_to_class.values())
 
     sns.heatmap(confusion, annot=True, cmap='Blues', fmt='g')
-    plt.xticks(rotation=0) 
+    plt.xticks(rotation=0)
     plt.savefig("confusion_matrix.png")
     plt.show()

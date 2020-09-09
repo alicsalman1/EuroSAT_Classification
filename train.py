@@ -13,10 +13,17 @@ from utils import load_data, performance_report
 
 parser = argparse.ArgumentParser(description='Parse Training parameters.')
 parser.add_argument('--lr', default=0.1, help='Learning rate for trainig.')
-parser.add_argument('--batch_size', default=32, help='The batch size for training.')
-parser.add_argument('--log_file', type=str, default='training.log', help='A file to log the training and val losses and accuracies.')
-parser.add_argument('--data_dir', type=str, default="/home/ali/spacesense/EuroSAT/2750/", help='The directory where the dataset is stored.')
+parser.add_argument('--batch_size', default=32,
+                    help='The batch size for training.')
+parser.add_argument('--log_file', type=str, default='training.log',
+                    help='A file to log the training and val losses and accuracies.')
+parser.add_argument('--data_dir', type=str, default="/home/ali/spacesense/EuroSAT/2750/",
+                    help='The directory where the dataset is stored.')
 parser.add_argument('--num_epochs', default=75, help='Number of total epochs.')
+parser.add_argument('--eval_only', action='store_true',
+                    help='To evaluate the model only')
+parser.add_argument('--model', type=str, default="./checkpoints/best_model.pth",
+                    help='The model to evaluate.')
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -34,25 +41,26 @@ model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=args.lr,
-                    momentum=0.9, weight_decay=5e-4)
+                      momentum=0.9, weight_decay=5e-4)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
 
 train_loader, val_loader = load_data(args.data_dir, args.batch_size)
+
 
 def train(epoch):
     """Main training loop.
 
     Args:
         epoch (int): Current epoch.
-    """    
-    
+    """
+
     model.train()
     train_loss = 0
     correct = 0
     total = 0
     for batch_idx, (inputs, targets) in enumerate(train_loader):
-        inputs, targets = inputs.to(device), targets.to(device)        
-        
+        inputs, targets = inputs.to(device), targets.to(device)
+
         outputs = model(inputs)
 
         loss = criterion(outputs, targets)
@@ -69,9 +77,10 @@ def train(epoch):
         acc = 100 * correct / total
 
         print('train epoch : {} [{}/{}]| lr: {} | loss: {:.3f} | acc: {:.3f}'.format(
-        epoch, batch_idx, len(train_loader), optimizer.param_groups[0]['lr'], train_loss/(batch_idx+1), acc))
+            epoch, batch_idx, len(train_loader), optimizer.param_groups[0]['lr'], train_loss/(batch_idx+1), acc))
 
     scheduler.step()
+
 
 def test(epoch, best_acc):
     """Main testing loop.
@@ -81,8 +90,8 @@ def test(epoch, best_acc):
         best_acc (float): Current best accuracy.
 
     Returns:
-        float: new best accuracy (could be not changed).
-    """    
+        float: new best accuracy (can be not changed).
+    """
 
     model.eval()
     test_loss = 0
@@ -102,15 +111,15 @@ def test(epoch, best_acc):
             acc = 100 * test_correct / test_total
 
             print('test epoch : {} [{}/{}]| loss: {:.3f} | acc: {:.3f}'.format(
-            epoch, batch_idx, len(val_loader), test_loss/(batch_idx+1), acc))
+                epoch, batch_idx, len(val_loader), test_loss/(batch_idx+1), acc))
 
     # Save best model
     if acc > best_acc:
-        print('==> Saving best model...')  
+        print('==> Saving best model...')
         state = {
-        'net': model.state_dict(),
-        'acc': acc,
-        'epoch': epoch,
+            'net': model.state_dict(),
+            'acc': acc,
+            'epoch': epoch,
         }
         torch.save(state, './checkpoints/best_model.pth')
         best_acc = acc
@@ -121,14 +130,21 @@ def test(epoch, best_acc):
 if __name__ == "__main__":
     epochs = args.num_epochs
     best_acc = 0
+    test_every = 2
 
-    for epoch in range(epochs):
-        # Training
-        train(epoch)
+    if args.eval_only:
+        model_dict = torch.load("./checkpoints/best_model.pth")
+        model.load_state_dict(model_dict['net'])
+        performance_report(model, val_loader)
 
-        # Testing
-        if epoch % 2 == 0:
-            best_acc = test(epoch, best_acc)     
+    else:
+        for epoch in range(epochs):
+            # Training
+            train(epoch)
 
-    # Create performance report using the best model parameters.
-    performance_report(model, val_loader)
+            # Testing
+            if epoch % test_every == 0:
+                best_acc = test(epoch, best_acc)
+
+        # Create performance report using the best model parameters.
+        performance_report(model, val_loader)
