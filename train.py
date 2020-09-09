@@ -12,8 +12,10 @@ from utils import load_data, performance_report
 
 
 parser = argparse.ArgumentParser(description='Parse Training parameters.')
-parser.add_argument('--lr', default=0.1, help='Learning rate for trainig.')
-parser.add_argument('--batch_size', default=32,
+parser.add_argument('--lr', default=0.1, help='The learning rate for trainig.')
+parser.add_argument('--weight_decay', default=5e-4, help='The weight decay for trainig.')
+parser.add_argument('--step_lr', default=25, help='The step size for learning rate scheduler.')
+parser.add_argument('--batch_size', default=64,
                     help='The batch size for training.')
 parser.add_argument('--log_file', type=str, default='training.log',
                     help='A file to log the training and val losses and accuracies.')
@@ -41,8 +43,8 @@ model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=args.lr,
-                      momentum=0.9, weight_decay=5e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
+                      momentum=0.9, weight_decay=args.weight_decay)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_lr, gamma=0.1)
 
 train_loader, val_loader = load_data(args.data_dir, args.batch_size)
 
